@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
-	"golang.org/x/sys/windows/registry"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/tidwall/gjson"
+	"golang.org/x/sys/windows/registry"
 )
 
 const (
@@ -317,11 +318,22 @@ func SetMenuItem(path, display, command, subCommands string, top bool) error {
 	return nil
 }
 
+// --- 新增：图标路径处理辅助函数 [2025-12-27] ---
+// getValidIconPath 自动处理绝对/相对路径，避免重复驱动器拼接
+func getValidIconPath(tool *Tool) string {
+	// 若Command是绝对路径，直接使用；否则拼接Location（解决重复驱动器问题）
+	if filepath.IsAbs(tool.Command) {
+		return tool.Command
+	}
+	return filepath.Join(tool.Location, tool.Command)
+}
+
 // SetItem setItem add items to commandStore shell
 func SetItem(tool *Tool, admin bool) error {
 
 	regPath := CommandStoreShell + tool.Id
-	ico := filepath.Join(tool.Location, tool.Command)
+	// 修改1：替换原有ico拼接逻辑，调用新增的路径处理函数
+	ico := getValidIconPath(tool)
 	script := tool.Script
 	// special case for MPS
 	if tool.Id == "MPS" {
