@@ -349,6 +349,7 @@ func SetItem(tool *Tool, admin bool) error {
 	if err != nil {
 		return err
 	}
+	defer key.Close() // 新增：确保资源释放
 
 	// default value
 	if err := key.SetStringValue("", fmt.Sprintf("Open %s Here", tool.Name)); err != nil {
@@ -364,6 +365,7 @@ func SetItem(tool *Tool, admin bool) error {
 	if err != nil {
 		return err
 	}
+	defer cmdKey.Close() // 新增：确保资源释放
 
 	// set command
 	if err := cmdKey.SetStringValue("", commandScript(script, admin)); err != nil {
