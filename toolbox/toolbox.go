@@ -288,7 +288,7 @@ func SetMenu(dir string, items []string, top bool) error {
 func SetMenuItem(path, display, command, subCommands string, top bool) error {
 	key, err := OpenOrCreateKey(registry.CLASSES_ROOT, path, registry.WRITE)
 	if err != nil {
-		return err
+		return fmt.Errorf("打開/創建菜單注冊表鍵[%s]失敗: %w", path, err)
 	}
 	defer key.Close()
 
@@ -347,29 +347,29 @@ func SetItem(tool *Tool, admin bool) error {
 	// create or open registry key
 	key, err := OpenOrCreateKey(registry.LOCAL_MACHINE, regPath, registry.WRITE)
 	if err != nil {
-		return err
+		return fmt.Errorf("打開/創建注冊表鍵[%s]失敗: %w", regPath, err)
 	}
 	defer key.Close() // 新增：确保资源释放
 
 	// default value
 	if err := key.SetStringValue("", fmt.Sprintf("Open %s Here", tool.Name)); err != nil {
-		return err
+		return fmt.Errorf("設置注冊表默認值失敗: %w", err)
 	}
 	// set icon
 	if err := key.SetStringValue("Icon", ico); err != nil {
-		return err
+		return fmt.Errorf("設置圖標路徑注冊表失敗: %w", err)
 	}
 
 	// command sub key
 	cmdKey, err := OpenOrCreateKey(registry.LOCAL_MACHINE, regPath+`\command`, registry.WRITE)
 	if err != nil {
-		return err
+		return fmt.Errorf("打開/創建command子鍵[%s]失敗: %w", regPath+`\command`, err)
 	}
 	defer cmdKey.Close() // 新增：确保资源释放
-	
+
 	// set command
 	if err := cmdKey.SetStringValue("", commandScript(script, admin)); err != nil {
-		return err
+		return fmt.Errorf("設置command子鍵值失敗: %w", err)
 	}
 
 	return nil
