@@ -328,17 +328,37 @@ func getValidIconPath(tool *Tool) string {
 	return filepath.Join(tool.Location, tool.Command)
 }
 
+// validateIconPath 校驗圖標路徑合法性（重複驅動器 + 文件存在性）
+func validateIconPath(ico string) error {
+	// 检查重复驱动器（如 D:\a\D:\b.exe）
+	if strings.Count(ico, ":") > 1 {
+		return fmt.Errorf("图标路径含重复驱动器: %s", ico)
+	}
+	// 检查文件是否存在
+	if _, err := os.Stat(ico); err != nil {
+		return fmt.Errorf("图标文件不存在/无访问权限: %s, 原错误: %w", ico, err)
+	}
+	return nil
+}
+
 // SetItem setItem add items to commandStore shell
 func SetItem(tool *Tool, admin bool) error {
 
 	regPath := CommandStoreShell + tool.Id
 	// 修改1：替换原有ico拼接逻辑，调用新增的路径处理函数
 	ico := getValidIconPath(tool)
-	script := tool.Script
+
 	// special case for MPS
 	if tool.Id == "MPS" {
 		ico = filepath.Join(tool.Location, "bin/mps.ico")
 	}
+
+	// 修改2：新增图标路径校验（提前失败，不侵入后续逻辑）
+	if err := validateIconPath(ico); err != nil {
+		return fmt.Errorf("工具[%s]图标路径校验失败: %w", tool.Name, err)
+	}
+
+	script := tool.Script
 	if tool.Availability == legacy {
 		script = ico
 	} else if tool.Availability == unavailable {
