@@ -32,7 +32,8 @@ const (
 
 const (
 	// using the VBScript to open IDE as admin
-	_VBScript  = `mshta vbscript:createobject("shell.application").shellexecute("%s","%%V","","runas",1)(close)`
+	//_VBScript  = `mshta vbscript:createobject("shell.application").shellexecute("%s","%%V","","runas",1)(close)`
+	_VBScript  = `powershell -NoProfile -Command "Start-Process '%s' -ArgumentList '%%V' -Verb RunAs"`
 	_CmdScript = `"%s" "%%V"`
 )
 
