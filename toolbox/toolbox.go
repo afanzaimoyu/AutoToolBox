@@ -289,7 +289,7 @@ func SetMenu(dir string, items []string, top bool) error {
 func SetMenuItem(path, display, command, subCommands string, top bool) error {
 	key, err := OpenOrCreateKey(registry.CLASSES_ROOT, path, registry.WRITE)
 	if err != nil {
-		return fmt.Errorf("打開/創建菜單注冊表鍵[%s]失敗: %w", path, err)
+		return fmt.Errorf("failed to open/create registry key[%s]: %w", path, err)
 	}
 	defer key.Close()
 
@@ -319,8 +319,7 @@ func SetMenuItem(path, display, command, subCommands string, top bool) error {
 	return nil
 }
 
-// --- 新增：图标路径处理辅助函数 [2025-12-27] ---
-// getValidIconPath 自动处理绝对/相对路径，避免重复驱动器拼接
+// getValidIconPath automatically handles absolute/relative paths to avoid duplicate drive letters
 func getValidIconPath(tool *Tool) string {
 	// 若Command是绝对路径，直接使用；否则拼接Location（解决重复驱动器问题）
 	if filepath.IsAbs(tool.Command) {
@@ -329,15 +328,15 @@ func getValidIconPath(tool *Tool) string {
 	return filepath.Join(tool.Location, tool.Command)
 }
 
-// validateIconPath 校驗圖標路徑合法性（重複驅動器 + 文件存在性）
+// validateIconPath validates the legitimacy of the icon path
 func validateIconPath(ico string) error {
-	// 检查重复驱动器（如 D:\a\D:\b.exe）
+	// check for duplicate drive letters (e.g., D:\a\D:\b.exe)
 	if strings.Count(ico, ":") > 1 {
-		return fmt.Errorf("图标路径含重复驱动器: %s", ico)
+		return fmt.Errorf("icon path contains duplicate drive letters: %s", ico)
 	}
-	// 检查文件是否存在
+	// check if file exists
 	if _, err := os.Stat(ico); err != nil {
-		return fmt.Errorf("图标文件不存在/无访问权限: %s, 原错误: %w", ico, err)
+		return fmt.Errorf("icon file does not exist or access denied: %s, error: %w", ico, err)
 	}
 	return nil
 }
@@ -346,7 +345,6 @@ func validateIconPath(ico string) error {
 func SetItem(tool *Tool, admin bool) error {
 
 	regPath := CommandStoreShell + tool.Id
-	// 修改1：替换原有ico拼接逻辑，调用新增的路径处理函数
 	ico := getValidIconPath(tool)
 
 	// special case for MPS
@@ -354,9 +352,9 @@ func SetItem(tool *Tool, admin bool) error {
 		ico = filepath.Join(tool.Location, "bin/mps.ico")
 	}
 
-	// 修改2：新增图标路径校验（提前失败，不侵入后续逻辑）
+	// icon path validation
 	if err := validateIconPath(ico); err != nil {
-		return fmt.Errorf("工具[%s]图标路径校验失败: %w", tool.Name, err)
+		return fmt.Errorf("failed to validate icon path for tool [%s]: %w", tool.Name, err)
 	}
 
 	script := tool.Script
@@ -368,29 +366,29 @@ func SetItem(tool *Tool, admin bool) error {
 	// create or open registry key
 	key, err := OpenOrCreateKey(registry.LOCAL_MACHINE, regPath, registry.WRITE)
 	if err != nil {
-		return fmt.Errorf("打開/創建注冊表鍵[%s]失敗: %w", regPath, err)
+		return fmt.Errorf("failed to open/create registry key [%s]: %w", regPath, err)
 	}
-	defer key.Close() // 新增：确保资源释放
+	defer key.Close()
 
 	// default value
 	if err := key.SetStringValue("", fmt.Sprintf("Open %s Here", tool.Name)); err != nil {
-		return fmt.Errorf("設置注冊表默認值失敗: %w", err)
+		return fmt.Errorf("failed to set registry default value: %w", err)
 	}
 	// set icon
 	if err := key.SetStringValue("Icon", ico); err != nil {
-		return fmt.Errorf("設置圖標路徑注冊表失敗: %w", err)
+		return fmt.Errorf("failed to set icon registry value: %w", err)
 	}
 
 	// command sub key
 	cmdKey, err := OpenOrCreateKey(registry.LOCAL_MACHINE, regPath+`\command`, registry.WRITE)
 	if err != nil {
-		return fmt.Errorf("打開/創建command子鍵[%s]失敗: %w", regPath+`\command`, err)
+		return fmt.Errorf("failed to open/create command subkey [%s]: %w", regPath+`\command`, err)
 	}
-	defer cmdKey.Close() // 新增：确保资源释放
+	defer cmdKey.Close()
 
 	// set command
 	if err := cmdKey.SetStringValue("", commandScript(script, admin)); err != nil {
-		return fmt.Errorf("設置command子鍵值失敗: %w", err)
+		return fmt.Errorf("failed to set command subkey value: %w", err)
 	}
 
 	return nil
