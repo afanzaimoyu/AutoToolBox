@@ -321,7 +321,7 @@ func SetMenuItem(path, display, command, subCommands string, top bool) error {
 
 // getValidIconPath automatically handles absolute/relative paths to avoid duplicate drive letters
 func getValidIconPath(tool *Tool) string {
-	// 若Command是绝对路径，直接使用；否则拼接Location（解决重复驱动器问题）
+	// If Command is an absolute path, use it directly; otherwise, join it with Location
 	if filepath.IsAbs(tool.Command) {
 		return tool.Command
 	}
